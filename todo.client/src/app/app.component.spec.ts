@@ -1,47 +1,72 @@
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { AppComponent } from './app.component';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { TodoService } from './services/todo.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
+import { of } from 'rxjs';
+import { CreateTodoRequest, Todo } from './models/todo.model';
 
 describe('AppComponent', () => {
   let component: AppComponent;
   let fixture: ComponentFixture<AppComponent>;
-  let httpMock: HttpTestingController;
+  let todoServiceSpy: jasmine.SpyObj<TodoService>;
+  let snackBarSpy: jasmine.SpyObj<MatSnackBar>;
+  let dialogSpy: jasmine.SpyObj<MatDialog>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-    declarations: [AppComponent],
-    imports: [],
-    providers: [provideHttpClient(withInterceptorsFromDi()), provideHttpClientTesting()]
-}).compileComponents();
-  });
+  const mockTodos: Todo[] = [
+    { id: 1, title: 'Test 1', isCompleted: false, createdAt: new Date().toISOString() },
+    { id: 2, title: 'Test 2', isCompleted: true, createdAt: new Date().toISOString() }
+  ];
+
+  beforeEach(waitForAsync(() => {
+    todoServiceSpy = jasmine.createSpyObj('TodoService', ['loadTodos', 'createTodo', 'deleteTodo'], {
+      todos$: of(mockTodos)
+    });
+
+    snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
+    dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
+
+    // Ensure loadTodos returns a valid observable BEFORE detectChanges
+    todoServiceSpy.loadTodos.and.returnValue(of(mockTodos));
+
+    TestBed.configureTestingModule({
+      imports: [AppComponent],
+      providers: [
+        { provide: TodoService, useValue: todoServiceSpy },
+        { provide: MatSnackBar, useValue: snackBarSpy },
+        { provide: MatDialog, useValue: dialogSpy }
+      ]
+    }).compileComponents();
+  }));
 
   beforeEach(() => {
     fixture = TestBed.createComponent(AppComponent);
     component = fixture.componentInstance;
-    httpMock = TestBed.inject(HttpTestingController);
+    fixture.detectChanges();
   });
 
-  afterEach(() => {
-    httpMock.verify();
-  });
-
-  it('should create the app', () => {
+  it('should create the component', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should retrieve weather forecasts from the server', () => {
-    const mockForecasts = [
-      { date: '2021-10-01', temperatureC: 20, temperatureF: 68, summary: 'Mild' },
-      { date: '2021-10-02', temperatureC: 25, temperatureF: 77, summary: 'Warm' }
-    ];
+  it('should initialize form with empty title', () => {
+    expect(component.todoForm.get('title')?.value).toBe('');
+  });
 
-    component.ngOnInit();
+  it('should load todos on init', () => {
+    expect(todoServiceSpy.loadTodos).toHaveBeenCalled();
+  });
 
-    const req = httpMock.expectOne('/weatherforecast');
-    expect(req.request.method).toEqual('GET');
-    req.flush(mockForecasts);
+  describe('onSubmit', () => {
+    it('should not create todo when form is invalid', () => {
+      component.todoForm.patchValue({ title: '' });
+      component.onSubmit();
+      expect(todoServiceSpy.createTodo).not.toHaveBeenCalled();
+    });
+  });
 
-    expect(component.forecasts).toEqual(mockForecasts);
+  it('should track todo by id', () => {
+    const result = component.trackByTodoId(0, mockTodos[0]);
+    expect(result).toBe(mockTodos[0].id);
   });
 });

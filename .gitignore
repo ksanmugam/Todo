@@ -3,6 +3,7 @@
 # Compiled output
 /todo.client/dist/
 todo.client/.angular/cache/
+todo.client/.vscode
 /tmp
 /out-tsc
 /bazel-out

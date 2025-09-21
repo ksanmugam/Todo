@@ -1,24 +1,85 @@
-﻿<h1 id="tableLabel">Weather forecast</h1>
+﻿<div class="container">
+  <mat-toolbar color="primary">
+    <mat-icon>assignment</mat-icon>
+    <span>{{ title }}</span>
+  </mat-toolbar>
 
-<p>This component demonstrates fetching data from the server.</p>
+  <div class="content">
+    <!-- Add Todo Form -->
+    <mat-card class="add-todo-card">
+      <mat-card-header>
+        <mat-card-title>Add a new Todo</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="todoForm" (ngSubmit)="onSubmit()">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>What needs to be done?</mat-label>
+            <input 
+              matInput 
+              formControlName="title" 
+              placeholder="Enter your todo item"
+              maxlength="200">
+            <mat-icon matSuffix>create</mat-icon>
+            <mat-error *ngIf="titleControl?.hasError('required')">
+              Title is required
+            </mat-error>
+            <mat-error *ngIf="titleControl?.hasError('minlength')">
+              Title cannot be empty
+            </mat-error>
+            <mat-hint align="end">{{ titleControl?.value?.length || 0 }}/200</mat-hint>
+          </mat-form-field>
+          
+          <div class="form-actions">
+            <button 
+              mat-raised-button 
+              color="primary" 
+              type="submit" 
+              [disabled]="todoForm.invalid">
+              <mat-icon>add</mat-icon>
+              Add
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
 
-<p *ngIf="!forecasts"><em>Loading... Please refresh once the ASP.NET backend has started. See <a href="https://aka.ms/jspsintegrationangular">https://aka.ms/jspsintegrationangular</a> for more details.</em></p>
+    <!-- Loading Indicator -->
+    <div *ngIf="isLoading" class="loading">
+      <mat-spinner diameter="50"></mat-spinner>
+      <p>Loading todos...</p>
+    </div>
 
-<table *ngIf="forecasts">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Temp. (C)</th>
-            <th>Temp. (F)</th>
-            <th>Summary</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr *ngFor="let forecast of forecasts">
-            <td>{{ forecast.date }}</td>
-            <td>{{ forecast.temperatureC }}</td>
-            <td>{{ forecast.temperatureF }}</td>
-            <td>{{ forecast.summary }}</td>
-        </tr>
-    </tbody>
-</table>
+    <!-- Todo List -->
+    <div *ngIf="!isLoading" class="todo-list">
+      <div *ngIf="(todos$ | async)?.length === 0" class="empty-state">
+        <mat-icon class="empty-icon">assignment_turned_in</mat-icon>
+        <h2>No todos yet!</h2>
+        <p>Add your first todo item above to get started.</p>
+      </div>
+
+      <mat-card *ngFor="let todo of todos$ | async; trackBy: trackByTodoId" class="todo-item">
+        <mat-card-content>
+          <div class="todo-content">
+            <div class="todo-info">
+              <h3>{{ todo.title }}</h3>
+              <p class="todo-date">
+                <mat-icon>schedule</mat-icon>
+                Created: {{ todo.createdAt | date:'dd/MM/yyyy hh:mm a' }}
+              </p>
+            </div>
+            <div class="todo-actions">
+              <button 
+                mat-icon-button 
+                color="warn" 
+                (click)="deleteTodo(todo)"
+                matTooltip="Delete todo"
+                aria-label="Delete todo">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+</div>
