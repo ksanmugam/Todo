@@ -96,7 +96,7 @@ npm test
 │   ├── Program.cs
 │   └── TodoApi.Tests/
 ├── Todo.Server/              # Backend unit tests
-└── TodoApp/                  # Angular Frontend
+└── todo.client/              # Angular Frontend
     ├── src/
     │   ├── app/
     │   │   ├── components/
