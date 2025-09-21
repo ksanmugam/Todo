@@ -2,6 +2,7 @@
 
 # Compiled output
 /todo.client/dist/
+todo.client/.angular/cache/
 /tmp
 /out-tsc
 /bazel-out
